@@ -11,6 +11,8 @@ The Consumption Display is an ESP32-based solution designed to show real-time in
 - **Display**: 2.8” CYD TFT display with ILI9342, displaying data with graphic icons for easy reading.
 - **Web Server**: Simple web-based configuration and system updates through ESPHome.
 
+<a href=""><img src="https://github.com/PhPersson/esphome-consumption-display/raw/main/images/esphome-consumption-display.jpeg" alt="" height="40%" width="40%"></a>
+
 # Configuration Instructions
 
 Before using the system, you need to customize the following values in your configuration:
