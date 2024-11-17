@@ -1,0 +1,137 @@
+substitutions:
+  device_name: forbrukning
+  friendly_name: Förbrukningsdisplay
+
+  current_consumption_sensor: sensor.import
+  current_export_sensor: sensor.export
+  nordpool_sensor: sensor.nordpool_kwh_se4_sek_3_10_025
+
+
+esphome:
+  name: $device_name
+  friendly_name: $friendly_name
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+api:
+ota:
+  platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+captive_portal:
+web_server:
+
+# Fonts for display
+font:
+  - file: "fonts/materialdesignicons-webfont.ttf"
+    id: icon_font
+    size: 20
+    glyphs: [
+        "󱩴", #solarpower
+        "󰄖", #cash
+        "󱤭"
+    ]
+  - file: 'fonts/Arimo-Regular.ttf'
+    id: the_font
+    size: 24
+    glyphs: "!\"%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ abcdefghijklmnopqrstuvwxyzåäö"
+
+# Light and LED setup
+light:
+  - platform: monochromatic
+    output: backlight_pwm
+    name: Display Backlight
+    id: backlight
+    restore_mode: ALWAYS_ON
+  - platform: rgb
+    name: LED
+    id: led
+    red: output_red
+    green: output_green
+    blue: output_blue
+    restore_mode: ALWAYS_OFF
+
+# SPI setup for display and touch
+spi:
+  - id: tft
+    clk_pin: GPIO14
+    mosi_pin: GPIO13
+    miso_pin: GPIO12
+
+output:
+  - platform: ledc
+    pin: GPIO21
+    id: backlight_pwm
+  - platform: ledc
+    id: output_red
+    pin: GPIO4
+    inverted: true
+  - platform: ledc
+    id: output_green
+    pin: GPIO16
+    inverted: true
+  - platform: ledc
+    id: output_blue
+    pin: GPIO17
+    inverted: true
+    
+
+    
+# ESP32-2432S028R TFT Display setup (ili9342)
+display:
+  - platform: ili9xxx
+    id: esp_display
+    model: ili9342
+    spi_id: tft
+    cs_pin: GPIO15
+    dc_pin: GPIO2
+    invert_colors: false
+    rotation: 180
+    lambda: |-
+      it.fill(id(Color::BLACK));
+
+      it.print(10, 5, id(icon_font), "󱤭");
+      it.print(50, 5, id(the_font), "Förbrukning:");
+      it.printf(200, 5, id(the_font), "%.2f W", id(current_consumption).has_state() ? id(current_consumption).state : 0.0);
+
+
+      it.print(10, 40, id(icon_font), "󰄖"); 
+      it.print(50, 40, id(the_font), "Elpris:");
+      it.printf(200, 40, id(the_font), "%.2f SEK", id(price_now).has_state() ? id(price_now).state : 0.0);
+
+      float consumption = id(current_consumption).has_state() ? id(current_consumption).state : 0.0;
+      float price = id(price_now).has_state() ? id(price_now).state : 0.0;
+      if (consumption > 0 && price > 0) {
+        float cost = (consumption / 1000) * price; 
+        it.print(10, 75, id(icon_font), "󰄖");
+        it.print(50, 75, id(the_font), "Kostnad:");
+        it.printf(200, 75, id(the_font), "%.2f SEK", cost);
+      } else {
+        it.print(200, 75, id(the_font), "-");
+      }
+      it.print(10, 120, id(icon_font), "󱩴"); 
+      it.print(50, 120, id(the_font), "Sol:");
+      it.printf(200, 120, id(the_font), "%.2f W", id(sun_energy).has_state() ? id(sun_energy).state : 0.0);
+
+
+# Sensors to fetch current consumption data from Home Assistant
+sensor:
+  - platform: homeassistant
+    name: "Förbrukning"
+    id: current_consumption
+    entity_id: ${current_consumption_sensor}
+
+  - platform: homeassistant
+    id: sun_energy
+    entity_id: ${current_export_sensor}
+
+  - platform: homeassistant
+    id: price_now
+    entity_id: ${nordpool_sensor}
