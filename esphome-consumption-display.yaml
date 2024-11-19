@@ -1,7 +1,7 @@
 substitutions:
   device_name: forbrukning
   friendly_name: Förbrukningsdisplay
-
+  ## Change to your actual sensor names
   current_consumption_sensor: sensor.import
   current_export_sensor: sensor.export
   nordpool_sensor: sensor.nordpool_kwh_se4_sek_3_10_025
@@ -82,7 +82,11 @@ output:
     pin: GPIO17
     inverted: true
     
-
+color:
+  - id: red
+    red: 100%
+    green: 0%
+    blue: 0%
     
 # ESP32-2432S028R TFT Display setup (ili9342)
 display:
@@ -97,30 +101,34 @@ display:
     lambda: |-
       it.fill(id(Color::BLACK));
 
-      it.print(10, 5, id(icon_font), "󱤭");
-      it.print(50, 5, id(the_font), "Förbrukning:");
-      it.printf(200, 5, id(the_font), "%.2f W", id(current_consumption).has_state() ? id(current_consumption).state : 0.0);
-
-
-      it.print(10, 40, id(icon_font), "󰄖"); 
-      it.print(50, 40, id(the_font), "Elpris:");
-      it.printf(200, 40, id(the_font), "%.2f SEK", id(price_now).has_state() ? id(price_now).state : 0.0);
-
-      float consumption = id(current_consumption).has_state() ? id(current_consumption).state : 0.0;
-      float price = id(price_now).has_state() ? id(price_now).state : 0.0;
-      if (consumption > 0 && price > 0) {
-        float cost = (consumption / 1000) * price; 
-        it.print(10, 75, id(icon_font), "󰄖");
-        it.print(50, 75, id(the_font), "Kostnad:");
-        it.printf(200, 75, id(the_font), "%.2f SEK", cost);
-      } else {
-        it.print(200, 75, id(the_font), "-");
+      if (id(current_consumption).has_state() && id(current_consumption).state > 0) {
+        it.print(10, 5, id(icon_font), "󱤭");
+        it.print(50, 5, id(the_font), "Förbrukning:");
+        it.printf(200, 5, id(the_font), "%.2f W", id(current_consumption).state);
       }
-      it.print(10, 120, id(icon_font), "󱩴"); 
-      it.print(50, 120, id(the_font), "Sol:");
-      it.printf(200, 120, id(the_font), "%.2f W", id(sun_energy).has_state() ? id(sun_energy).state : 0.0);
+
+      if (id(price_now).has_state() && id(price_now).state > 0) {
+        it.print(10, 40, id(icon_font), "󰄖");
+        it.print(50, 40, id(the_font), "Elpris:");
+        it.printf(200, 40, id(the_font), "%.2f SEK", id(price_now).state);
+
+        if (id(current_consumption).has_state() && id(current_consumption).state > 0) {
+          float cost = (id(current_consumption).state / 1000) * id(price_now).state;
+          it.print(10, 75, id(icon_font), "󰄖");
+          it.print(50, 75, id(the_font), "Kostnad:");
+          it.printf(200, 75, id(the_font), "%.2f SEK", cost);
+        }
+      }
+
+      if (id(sun_energy).has_state() && id(sun_energy).state > 0) {
+        it.print(10, 120, id(icon_font), "󱩴");
+        it.printf(50, 120, id(the_font), "Sol: %.2f W", id(sun_energy).state);
+      }
 
 
+
+
+      
 # Sensors to fetch current consumption data from Home Assistant
 sensor:
   - platform: homeassistant
