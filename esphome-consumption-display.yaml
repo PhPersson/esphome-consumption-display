@@ -1,16 +1,18 @@
 substitutions:
   device_name: forbrukning
   friendly_name: Förbrukningsdisplay
-  ## Change to your actual sensor names
+
   current_consumption_sensor: sensor.import
   current_export_sensor: sensor.export
   nordpool_sensor: sensor.nordpool_kwh_se4_sek_3_10_025
-
+  font_size: "20" #Size of the font 
 
 esphome:
   name: $device_name
   friendly_name: $friendly_name
-
+  project:
+    name: PhPersson.forbrukningsdisplay
+    version: "1.0"
 esp32:
   board: esp32dev
   framework:
@@ -20,6 +22,10 @@ logger:
 api:
 ota:
   platform: esphome
+
+dashboard_import:
+  package_import_url: github://PhPersson/esphome-consumption-display/esphome-consumption-display.yaml@main
+  import_full_config: True
 
 wifi:
   ssid: !secret wifi_ssid
@@ -32,7 +38,7 @@ web_server:
 font:
   - file: "fonts/materialdesignicons-webfont.ttf"
     id: icon_font
-    size: 20
+    size: ${font_size}
     glyphs: [
         "󱩴", #solarpower
         "󰄖", #cash
